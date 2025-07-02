@@ -14,7 +14,8 @@ from rag_service.vector_store import VectorStore
 from rag_service.retriever import Retriever
 from rag_service.qa_service import QAService
 from rag_service.rag_pipeline import RAGPipeline
-from rag_service.exceptions import DocumentProcessingError, RetrievalError, QAError
+from rag_service.exceptions import DocumentProcessingError, RetrievalError, QAError, ConfigurationError
+from rag_service.embeddings import SimpleEmbedder
 
 
 class TestDocumentProcessor:
