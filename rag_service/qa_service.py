@@ -6,6 +6,7 @@ Handles LLM integration and answer generation
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 from .exceptions import QAError
+import ollama
 
 
 class BaseLLM(ABC):
@@ -170,6 +171,68 @@ class SimpleLLM(BaseLLM):
             return "Based on the provided context, I can see relevant information but need a more specific question to provide a detailed answer."
 
 
+class OllamaLLM(BaseLLM):
+    """
+    Ollama LLM implementation for local model inference.
+    Supports any model available through Ollama.
+    """
+    
+    def __init__(self, model_name: str = "llama3:70b-instruct", temperature: float = 0.1):
+        """
+        Initialize Ollama LLM.
+        
+        Args:
+            model_name: Name of the Ollama model to use
+            temperature: Sampling temperature (0.0 to 1.0)
+        """
+        self.model_name = model_name
+        self.temperature = temperature
+        
+        # Test connection to Ollama
+        try:
+            response = ollama.chat(
+                model=self.model_name,
+                messages=[{"role": "user", "content": "Hello"}],
+                stream=False
+            )
+            print(f"✅ Successfully connected to Ollama model: {model_name}")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not connect to Ollama model {model_name}: {e}")
+            print("Make sure Ollama is running and the model is available")
+    
+    async def generate(self, prompt: str, **kwargs) -> str:
+        """
+        Generate text using Ollama model.
+        
+        Args:
+            prompt: Input prompt for the model
+            **kwargs: Additional generation parameters
+            
+        Returns:
+            Generated text response
+        """
+        try:
+            # Override temperature if provided in kwargs
+            temperature = kwargs.get('temperature', self.temperature)
+            
+            response = ollama.chat(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                stream=False,
+                options={
+                    "temperature": temperature,
+                    "num_predict": kwargs.get('max_tokens', 500),
+                    "top_p": kwargs.get('top_p', 0.9),
+                    "stop": kwargs.get('stop', [])
+                }
+            )
+            
+            return response['message']['content']
+            
+        except Exception as e:
+            raise Exception(f"Ollama generation failed: {str(e)}") from e
+
+
 # Factory function for easy LLM creation
 def create_llm(llm_type: str = "simple", **kwargs) -> BaseLLM:
     """
@@ -186,5 +249,7 @@ def create_llm(llm_type: str = "simple", **kwargs) -> BaseLLM:
         return SimpleLLM(**kwargs)
     elif llm_type == "mock":
         return MockLLM(**kwargs)
+    elif llm_type == "ollama":
+        return OllamaLLM(**kwargs)
     else:
         raise ValueError(f"Unknown LLM type: {llm_type}")
