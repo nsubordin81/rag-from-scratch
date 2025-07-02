@@ -380,7 +380,7 @@ class TestRAGPipeline:
         assert isinstance(result, dict)
         assert 'answer' in result
         assert 'sources' in result
-        mock_retriever.retrieve.assert_called_once_with(query, k=5)
+        mock_retriever.retrieve.assert_called_once_with(query, k=5, threshold=None, metadata_filter=None)
         mock_qa_service.generate_answer_with_sources.assert_called_once()
     
     @pytest.mark.asyncio
@@ -390,7 +390,7 @@ class TestRAGPipeline:
         
         result = await rag_pipeline.query(query, k=10, threshold=0.8)
         
-        mock_retriever.retrieve.assert_called_once_with(query, k=10, threshold=0.8)
+        mock_retriever.retrieve.assert_called_once_with(query, k=10, threshold=0.8, metadata_filter=None)
     
     def test_ingest_multiple_documents(self, rag_pipeline, mock_document_processor):
         """Test ingesting multiple documents"""

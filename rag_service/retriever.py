@@ -58,8 +58,13 @@ class Retriever:
             results = self.vector_store.similarity_search(query_embedding, k=k)
             
             # Apply threshold filtering
-            if threshold > 0.0:
-                results = [result for result in results if result["score"] >= threshold]
+            if threshold is not None and threshold > 0.0:
+                filtered_results = []
+                for result in results:
+                    score = result.get("score")
+                    if score is not None and score >= threshold:
+                        filtered_results.append(result)
+                results = filtered_results
             
             # Apply metadata filtering (basic implementation)
             if metadata_filter:
