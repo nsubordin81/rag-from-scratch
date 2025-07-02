@@ -65,6 +65,12 @@ class TestDocumentProcessor:
         """Test text chunking functionality"""
         long_text = "This is a long document. " * 100
         chunks = document_processor.chunk_text(long_text, chunk_size=100, overlap=20)
+
+        # Check that the last chunk contains the last part of the text
+        last_chunk = chunks[-1]
+        assert "long document." in last_chunk
+        # If chunk_size=100 and overlap=20, and len(long_text) > 100, last chunk should not be empty
+        assert len(last_chunk) > 0
         
         assert len(chunks) > 1
         assert all(len(chunk) <= 120 for chunk in chunks)  # chunk_size + overlap
@@ -104,8 +110,13 @@ class TestVectorStore:
     """Tests for vector storage and retrieval"""
     
     @pytest.fixture
-    def vector_store(self):
-        return VectorStore(dimension=384)  # Assuming 384-dim embeddings
+    def vector_store(self, request):
+        vs = VectorStore(dimension=384)  # Assuming 384-dim embeddings
+        
+        # Add finalizer to clean up after the test
+        request.addfinalizer(vs.cleanup)
+        
+        return vs
     
     @pytest.fixture
     def sample_embeddings(self):
